@@ -15,6 +15,9 @@ public class BackGroundMove : MonoBehaviour
 
     private void FixedUpdate()
     {
-        MeshRenderer.material.mainTextureOffset += new Vector2(scrollSpeed * Time.deltaTime, 0);
+        if (GameManager.instance.currentGameState == EGameState.MoveNextStep)
+        {
+            MeshRenderer.material.mainTextureOffset += new Vector2(scrollSpeed * Time.deltaTime, 0);
+        }
     }
 }

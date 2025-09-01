@@ -80,6 +80,11 @@ public class ObjectManager : MonoBehaviour
 
     void Update()
     {
+        if (GameManager.instance.currentGameState != EGameState.MoveNextStep)
+        {
+            return;
+        }
+
         distantFarObjectSpawnTimer  += Time.deltaTime;
         farObjectSpawnTimer         += Time.deltaTime;
         midObjectSpawnTimer         += Time.deltaTime;

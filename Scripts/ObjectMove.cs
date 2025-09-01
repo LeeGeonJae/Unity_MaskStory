@@ -20,7 +20,16 @@ public class ObjectMove : MonoBehaviour
     {
         ObjectManager objectManager = GameManager.instance.objectManager;
         objectSpeed = objectManager.GetObjectTypeSpeed(backgroundDistanceType);
-        rigidbody2.linearVelocity = new Vector3(-objectSpeed, 0, 0);
+
+        GameManager.instance.updateGameState.AddListener(UpdateGameState);
+        if (GameManager.instance.currentGameState == EGameState.MoveNextStep)
+        {
+            rigidbody2.linearVelocity = new Vector3(-objectSpeed, 0, 0);
+        }
+        else
+        {
+            rigidbody2.linearVelocity = Vector3.zero;
+        }
     }
 
     private void FixedUpdate()
@@ -28,6 +37,22 @@ public class ObjectMove : MonoBehaviour
         if (transform.position.x < -15)
         {
             gameObject.SetActive(false);
+        }
+    }
+
+    void OnDestroy()
+    {
+    }
+
+    void UpdateGameState(EGameState gameState)
+    {
+        if (gameState == EGameState.MoveNextStep)
+        {
+            rigidbody2.linearVelocity = new Vector3(-objectSpeed, 0, 0);
+        }
+        else
+        {
+            rigidbody2.linearVelocity = Vector3.zero;
         }
     }
 

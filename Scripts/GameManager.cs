@@ -1,20 +1,31 @@
 using UnityEngine;
+using UnityEngine.Events;
 
-public enum EStageType
+public enum EGameState
 {
-    Stage_1 = 0,
-    Stage_2,
-    Stage_3,
-    Stage_4
+    None = 0,
+    MoveNextStep,
+    TextWrite,
+    ChoiceSelect
 }
 
 public class GameManager : MonoBehaviour
 {
+    // 매니저
+    [Header("Manager")]
     public static GameManager instance;
     public ObjectManager objectManager;
+    public StoryManager storyManager;
+    public GameObject textManager;
 
-    EStageType stageType = EStageType.Stage_1;
-    bool isPlayerMove = true;
+    // 이벤트
+    [Header("Event")]
+    public UnityEvent<EGameState> updateGameState;
+    public UnityEvent<EPlayerStateType> updatePlayerState;
+
+    // 게임 상태
+    [Header("GameState")]
+    public EGameState currentGameState = EGameState.MoveNextStep;
 
     private void Awake()
     {
@@ -26,13 +37,26 @@ public class GameManager : MonoBehaviour
         instance = this;
     }
 
-    public EStageType GetCurrentState()
+    private void Update()
     {
-        return stageType;
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            SetGameState(currentGameState == EGameState.MoveNextStep ? EGameState.None : EGameState.MoveNextStep);
+
+            if (currentGameState == EGameState.MoveNextStep)
+            {
+                updatePlayerState?.Invoke(EPlayerStateType.Run);
+            }
+            else if (currentGameState == EGameState.None)
+            {
+                updatePlayerState?.Invoke(EPlayerStateType.Idle);
+            }
+        }
     }
 
-    public bool GetIsPlayerMove()
+    public void SetGameState(EGameState gameState)
     {
-        return isPlayerMove;
+        currentGameState = gameState;
+        updateGameState?.Invoke(gameState);
     }
 }

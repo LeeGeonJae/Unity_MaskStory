@@ -13,6 +13,8 @@ public class StoryLoader : MonoBehaviour
     public TextAsset csvFile;
     public List<StoryLine> storyList = new List<StoryLine>();
 
+    Dictionary<string, string> storyBoard = new Dictionary<string, string>();
+
     void Awake()
     {
         string[] lines = csvFile.text.Split('\n');
@@ -25,6 +27,11 @@ public class StoryLoader : MonoBehaviour
                 ID = row[0],
                 Content = row[1].Trim('"')
             });
+
+            if (!storyBoard.ContainsKey(row[0]))
+            {
+                storyBoard.Add(row[0], row[1].Trim('"'));
+            }
         }
     }
 }
