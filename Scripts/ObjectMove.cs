@@ -22,7 +22,7 @@ public class ObjectMove : MonoBehaviour
         objectSpeed = objectManager.GetObjectTypeSpeed(backgroundDistanceType);
 
         GameManager.instance.updateGameState.AddListener(UpdateGameState);
-        if (GameManager.instance.currentGameState == GameState.MoveNextStep)
+        if (GameManager.instance.currentGameState == GameStateType.MoveNextStep)
         {
             rigidbody2.linearVelocity = new Vector3(-objectSpeed, 0, 0);
         }
@@ -44,9 +44,9 @@ public class ObjectMove : MonoBehaviour
     {
     }
 
-    void UpdateGameState(GameState gameState)
+    void UpdateGameState(GameStateType gameState)
     {
-        if (gameState == GameState.MoveNextStep)
+        if (gameState == GameStateType.MoveNextStep)
         {
             rigidbody2.linearVelocity = new Vector3(-objectSpeed, 0, 0);
         }

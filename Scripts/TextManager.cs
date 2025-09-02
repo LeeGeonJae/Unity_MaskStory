@@ -36,41 +36,51 @@ public class TextManager : MonoBehaviour
             storyList.Add(new StoryLine
             {
                 ID = row[0],
-                Content = row[1].Trim('"')
+                Content = row[1].Trim('"').Replace("\\n", "\n")
             });
 
             if (!storyBoard.ContainsKey(row[0]))
             {
-                storyBoard.Add(row[0], row[1].Trim('"'));
+                storyBoard.Add(row[0], row[1].Trim('"').Replace("\\n", "\n"));
             }
         }
     }
 
-    public void ShowText(string fullText)
+    public void ShowText(string fullText, bool compelete)
     {
         if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-        typingCoroutine = StartCoroutine(TypeText(fullText));
+        typingCoroutine = StartCoroutine(TypeText(storyBoard[fullText], compelete));
     }
 
-    IEnumerator TypeText(string fullText)
+    IEnumerator TypeText(string fullText, bool compelete)
     {
         textUI.text = "";
         for (int i = 0; i < fullText.Length; i++)
         {
             if (skip)
             {
-                textUI.text = fullText;
+                textUI.text = fullText.Replace("\\n", "\n"); // 스킵 시에도 줄바꿈 적용
                 break;
             }
 
-            TMP_TextInfo textInfo = textUI.textInfo;
-            textUI.text += fullText[i];
+            textUI.text += fullText[i] == '\\' && i + 1 < fullText.Length && fullText[i + 1] == 'n'
+                ? "\n" // "\n" 문자열을 실제 개행으로 변환
+                : fullText[i].ToString();
+
             textUI.ForceMeshUpdate();
 
-            // 마지막으로 추가된 글자 페이드 인
             int charIndex = textUI.text.Length - 1;
-            var meshInfo = textInfo.meshInfo[0];
-            int vertexIndex = textInfo.characterInfo[charIndex].vertexIndex;
+            TMP_CharacterInfo charInfo = textUI.textInfo.characterInfo[charIndex];
+
+            // 개행 문자 같은 보이지 않는 문자는 스킵
+            if (!charInfo.isVisible)
+            {
+                yield return null;
+                continue;
+            }
+
+            var meshInfo = textUI.textInfo.meshInfo[charInfo.materialReferenceIndex];
+            int vertexIndex = charInfo.vertexIndex;
             Color32[] vertexColors = meshInfo.colors32;
 
             for (int j = 0; j < 4; j++)
@@ -94,7 +104,22 @@ public class TextManager : MonoBehaviour
         }
 
         skip = false;
-        GameManager.instance.SetGameState(GameStateType.StoryEvent_CompleteText);
+
+        // 텍스트 완료
+        if (compelete)
+        {
+            if (GameManager.instance.currentGameState != GameStateType.MoveNextStep)
+            {
+                GameManager.instance.SetGameState(GameStateType.StoryEvent_CompleteEvent);
+            }
+        }
+        else
+        {
+            if (GameManager.instance.currentGameState != GameStateType.MoveNextStep)
+            {
+                GameManager.instance.SetGameState(GameStateType.StoryEvent_CompleteText);
+            }
+        }
     }
 
     public void SkipText()

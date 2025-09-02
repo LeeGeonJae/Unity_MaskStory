@@ -80,7 +80,7 @@ public class ObjectManager : MonoBehaviour
 
     void Update()
     {
-        if (GameManager.instance.currentGameState != GameState.MoveNextStep)
+        if (GameManager.instance.currentGameState != GameStateType.MoveNextStep)
         {
             return;
         }

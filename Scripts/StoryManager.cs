@@ -21,10 +21,8 @@ public enum ActionType
 public class StoryManager : MonoBehaviour
 {
     [Header("Event")]
-    public UnityEvent<ActionType, PlayerStat> OnConditionClick;
     public UnityEvent<Reword> OnReword;
     public UnityEvent<Penalty> OnPenalty;
-    public UnityEvent<ActionType> OnAction;
 
     [Header("Story")]
     [SerializeField] List<int> mainStoryChepter = new List<int>();
@@ -71,7 +69,8 @@ public class StoryManager : MonoBehaviour
     // 랜덤 이벤트 생성
     private void RandomStoryEvnet()
     {
-        StoryEventType randomValue = (StoryEventType)(Random.Range(0, (int)StoryEventType.MainStory - 1));
+        StoryEventType randomValue = (StoryEventType)Random.Range(0, (int)StoryEventType.Basic + 1);
+        Debug.Log(randomValue + "이벤트 생성");
         switch (randomValue)
         {
             // 서브 퀘스트 (챕터별 생성)
@@ -85,26 +84,39 @@ public class StoryManager : MonoBehaviour
 
                     storyEventObject = Instantiate(subStoreEvent[currentsubStoryEvent]);
                     storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.SubStory);
+                    StoryEventSetting();
                     currentsubStoryEvent++;
                 }
                 break;
                 // 몬스터 (랜덤 생성)
             case StoryEventType.Monster:
                 {
-                    int randomSpawnMonster = Random.Range(0, MonsterStoryEvent.Count - 1);
+                    int randomSpawnMonster = Random.Range(0, MonsterStoryEvent.Count);
                     storyEventObject = Instantiate(MonsterStoryEvent[randomSpawnMonster]);
                     storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.Monster);
+                    StoryEventSetting();
                 }
                 break;
                 // 기본 이벤트 (랜덤 생성)
             case StoryEventType.Basic:
                 {
-                    int randomSpawnMonster = Random.Range(0, BasicStoryEvent.Count - 1);
-                    storyEventObject = Instantiate(BasicStoryEvent[randomSpawnMonster]);
+                    int randomSpawnBasic = Random.Range(0, BasicStoryEvent.Count);
+                    storyEventObject = Instantiate(BasicStoryEvent[randomSpawnBasic]);
                     storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.Basic);
+                    StoryEventSetting();
                 }
                 break;
         }
+    }
 
+    private void StoryEventSetting()
+    {
+        storyEventObject.transform.SetParent(transform);
+        storyEventObject.transform.SetPositionAndRotation(transform.position, transform.rotation);
+    }
+
+    public void SubStoryFailed()
+    {
+        currentsubStoryEvent = subStoreEvent.Count + 1;
     }
 }

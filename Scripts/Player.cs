@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum PlayerStatType
 {
@@ -42,6 +43,7 @@ public class Player : MonoBehaviour
     // 플레이어 스텟
     [Header("PlayerStat")]
     public PlayerStat playerStat;
+    public Slider hpBar;
 
     // 플레이어 상태
     PlayerStateType playerStateType;
@@ -51,20 +53,25 @@ public class Player : MonoBehaviour
         animator = GetComponent<Animator>();
 
         GameManager.instance.updateGameState.AddListener(CheckInGameState);
+        GameManager.instance.onGameButton.AddListener(PlayerButtonClick);
+        GameManager.instance.OnPlayerAttack.AddListener(Attack);
         GameManager.instance.storyManager.OnReword.AddListener(GetRewrod);
         GameManager.instance.storyManager.OnPenalty.AddListener(GetPanalty);
 
         playerStat.Damage = ((double)playerStat.Power + ((double)playerStat.Agility / 1.5)) * ((double)playerStat.Intelligence / 5);
+        hpBar.value = 1;
     }
 
     private void OnDestroy()
     {
         GameManager.instance.updateGameState.RemoveListener(CheckInGameState);
+        GameManager.instance.onGameButton.RemoveListener(PlayerButtonClick);
+        GameManager.instance.OnPlayerAttack.RemoveListener(Attack);
         GameManager.instance.storyManager.OnReword.RemoveListener(GetRewrod);
         GameManager.instance.storyManager.OnPenalty.RemoveListener(GetPanalty);
     }
 
-    public void Attack()
+    public void Attack(bool check)
     {
         ChangePlayerState(PlayerStateType.Attack);
     }
@@ -74,10 +81,12 @@ public class Player : MonoBehaviour
         playerStat.CurrentHp -= damage;
         if (playerStat.CurrentHp > 0)
         {
+            hpBar.value = (float)playerStat.CurrentHp / (float)playerStat.MaxHp;
             ChangePlayerState(PlayerStateType.Hit);
         }
         else
         {
+            hpBar.value = 0;
             ChangePlayerState(PlayerStateType.Death);
         }
     }
@@ -99,6 +108,8 @@ public class Player : MonoBehaviour
                 playerStat.CurrentHp += reword.RewordValue;
                 break;
         }
+
+        playerStat.Damage = ((double)playerStat.Power * 2 + ((double)playerStat.Agility)) * ((double)playerStat.Intelligence / 30);
     }
 
     private void GetPanalty(Penalty penalty)
@@ -118,6 +129,8 @@ public class Player : MonoBehaviour
                 Damaged(penalty.PenaltydValue);
                 break;
         }
+
+        playerStat.Damage = ((double)playerStat.Power + ((double)playerStat.Agility / 1.5)) * ((double)playerStat.Intelligence / 5);
     }
 
     private void CheckInGameState(GameStateType gameState)
@@ -185,8 +198,19 @@ public class Player : MonoBehaviour
         ChangePlayerState(PlayerStateType.Idle);
     }
 
-    public PlayerStat GetPlayerStat()
+    private void PlayerButtonClick(GameButtonType type)
     {
-        return playerStat;
+        switch (type)
+        {
+            case GameButtonType.Act:
+                GameManager.instance.OnConditionClick?.Invoke(ActionType.Act, playerStat);
+                break;
+            case GameButtonType.Observe:
+                GameManager.instance.OnConditionClick?.Invoke(ActionType.Observe, playerStat);
+                break;
+            case GameButtonType.Pass:
+                GameManager.instance.OnConditionClick?.Invoke(ActionType.Pass, playerStat);
+                break;
+        }
     }
 }

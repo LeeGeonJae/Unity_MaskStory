@@ -12,7 +12,7 @@ public class ObjectSpriteChange : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteList.Count > 0)
         {
-            int index = Random.Range(0, spriteList.Count - 1);
+            int index = Random.Range(0, spriteList.Count);
             spriteRenderer.sprite = spriteList[index];
         }
     }
