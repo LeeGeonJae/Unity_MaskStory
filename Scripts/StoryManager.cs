@@ -3,31 +3,43 @@ using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 using UnityEngine.Events;
 
-public enum EEventType
+public enum StoryEventType
 {
-    SubStory = 0,
-    Monster,
-    Basic,
-    MainStory
+    SubStory = 0,   // 서브 스토리
+    Monster,        // 몬스터
+    Basic,          // 기본
+    MainStory       // 메인 스토리
+}
+
+public enum ActionType
+{
+    Act = 0,   // 행동하기
+    Observe,   // 살펴보기
+    Pass       // 지나가기
 }
 
 public class StoryManager : MonoBehaviour
 {
-    public UnityEvent<Condition> OnConditionClick;
+    [Header("Event")]
+    public UnityEvent<ActionType, PlayerStat> OnConditionClick;
     public UnityEvent<Reword> OnReword;
-    public UnityEvent<Penalty> OnPanalty;
+    public UnityEvent<Penalty> OnPenalty;
+    public UnityEvent<ActionType> OnAction;
 
-    public List<int> mainStoryChepter = new List<int>();
-    public List<GameObject> mainStoryEvent = new List<GameObject>();
-    public List<GameObject> subStoreEvent = new List<GameObject>();
-    public List<GameObject> MonsterStoryEvent = new List<GameObject>();
-    public List<GameObject> BasicStoryEvent = new List<GameObject>();
+    [Header("Story")]
+    [SerializeField] List<int> mainStoryChepter = new List<int>();
+    [SerializeField] List<GameObject> mainStoryEvent = new List<GameObject>();
+    [SerializeField] List<GameObject> subStoreEvent = new List<GameObject>();
+    [SerializeField] List<GameObject> MonsterStoryEvent = new List<GameObject>();
+    [SerializeField] List<GameObject> BasicStoryEvent = new List<GameObject>();
 
-    public int currentTurn = 0;
-    public int currentsubStoryEvent = 0;
+    [Header("Chepter")]
+    [SerializeField] int currentTurn = 0;
+    [SerializeField] int currentsubStoryEvent = 0;
 
     [SerializeField] GameObject storyEventObject;
 
+    // 이벤트 생성
     public void SpawnStoryEvent()
     {
         currentTurn++;
@@ -40,6 +52,7 @@ public class StoryManager : MonoBehaviour
         }
     }
 
+    // 메인 스토리 챕터인지 확인
     private bool CheckMainStoryChepter()
     {
         for (int i = 0; i < mainStoryChepter.Count; i++)
@@ -47,6 +60,7 @@ public class StoryManager : MonoBehaviour
             if (mainStoryChepter[i] == currentTurn)
             {
                 storyEventObject = Instantiate(mainStoryEvent[i]);
+                storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.MainStory);
                 return true;
             }
         }
@@ -54,12 +68,14 @@ public class StoryManager : MonoBehaviour
         return false;
     }
 
+    // 랜덤 이벤트 생성
     private void RandomStoryEvnet()
     {
-        EEventType randomValue = (EEventType)(Random.Range(0, (int)EEventType.MainStory - 1));
+        StoryEventType randomValue = (StoryEventType)(Random.Range(0, (int)StoryEventType.MainStory - 1));
         switch (randomValue)
         {
-            case EEventType.SubStory:
+            // 서브 퀘스트 (챕터별 생성)
+            case StoryEventType.SubStory:
                 {
                     if (currentsubStoryEvent >= subStoreEvent.Count)
                     {
@@ -68,21 +84,27 @@ public class StoryManager : MonoBehaviour
                     }
 
                     storyEventObject = Instantiate(subStoreEvent[currentsubStoryEvent]);
+                    storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.SubStory);
                     currentsubStoryEvent++;
                 }
                 break;
-            case EEventType.Monster:
+                // 몬스터 (랜덤 생성)
+            case StoryEventType.Monster:
                 {
                     int randomSpawnMonster = Random.Range(0, MonsterStoryEvent.Count - 1);
                     storyEventObject = Instantiate(MonsterStoryEvent[randomSpawnMonster]);
+                    storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.Monster);
                 }
                 break;
-            case EEventType.Basic:
+                // 기본 이벤트 (랜덤 생성)
+            case StoryEventType.Basic:
                 {
                     int randomSpawnMonster = Random.Range(0, BasicStoryEvent.Count - 1);
                     storyEventObject = Instantiate(BasicStoryEvent[randomSpawnMonster]);
+                    storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.Basic);
                 }
                 break;
         }
+
     }
 }

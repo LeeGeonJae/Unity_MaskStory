@@ -4,7 +4,7 @@ using UnityEngine;
 public class ObjectMove : MonoBehaviour
 {
     [Header("Setting")]
-    [SerializeField] ObjectManager.EObjectDistanceType backgroundDistanceType;
+    [SerializeField] ObjectManager.ObjectDistanceType backgroundDistanceType;
     [SerializeField] float randomXPosition = 0.1f;
     [SerializeField] Vector2 correctionPosition = new Vector2(0, -1);
 
@@ -22,7 +22,7 @@ public class ObjectMove : MonoBehaviour
         objectSpeed = objectManager.GetObjectTypeSpeed(backgroundDistanceType);
 
         GameManager.instance.updateGameState.AddListener(UpdateGameState);
-        if (GameManager.instance.currentGameState == EGameState.MoveNextStep)
+        if (GameManager.instance.currentGameState == GameState.MoveNextStep)
         {
             rigidbody2.linearVelocity = new Vector3(-objectSpeed, 0, 0);
         }
@@ -44,9 +44,9 @@ public class ObjectMove : MonoBehaviour
     {
     }
 
-    void UpdateGameState(EGameState gameState)
+    void UpdateGameState(GameState gameState)
     {
-        if (gameState == EGameState.MoveNextStep)
+        if (gameState == GameState.MoveNextStep)
         {
             rigidbody2.linearVelocity = new Vector3(-objectSpeed, 0, 0);
         }

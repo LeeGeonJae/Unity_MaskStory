@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ObjectManager : MonoBehaviour
 {
-    public enum EObjectDistanceType
+    public enum ObjectDistanceType
     {
         DistantFar,
         Far,
@@ -58,7 +58,7 @@ public class ObjectManager : MonoBehaviour
     [SerializeField] float closeObjectSpawnDelay = 1;
     [SerializeField] float groundObjectSpawnDelay = 1;
 
-    Dictionary<EObjectDistanceType, List<GameObject>> backgroundObject = new Dictionary<EObjectDistanceType, List<GameObject>>();
+    Dictionary<ObjectDistanceType, List<GameObject>> backgroundObject = new Dictionary<ObjectDistanceType, List<GameObject>>();
 
     float distantFarObjectSpawnTimer = 0;
     float farObjectSpawnTimer = 0;
@@ -70,9 +70,9 @@ public class ObjectManager : MonoBehaviour
 
     void Start()
     {
-        for (int i = 0; i < (int)EObjectDistanceType.End; i++)
+        for (int i = 0; i < (int)ObjectDistanceType.End; i++)
         {
-            backgroundObject[(EObjectDistanceType)i] = new List<GameObject>();
+            backgroundObject[(ObjectDistanceType)i] = new List<GameObject>();
         }
 
         groundObjectSpawnTimer = groundObjectSpawnDelay;
@@ -80,7 +80,7 @@ public class ObjectManager : MonoBehaviour
 
     void Update()
     {
-        if (GameManager.instance.currentGameState != EGameState.MoveNextStep)
+        if (GameManager.instance.currentGameState != GameState.MoveNextStep)
         {
             return;
         }
@@ -101,41 +101,41 @@ public class ObjectManager : MonoBehaviour
         if (distantFarObjectSpawnTimer > distantFarObjectSpawnDelay)
         {
             distantFarObjectSpawnTimer = 0;
-            SpawnObject(distantFarObject, EObjectDistanceType.DistantFar);
+            SpawnObject(distantFarObject, ObjectDistanceType.DistantFar);
         }
         if (farObjectSpawnTimer > farObjectSpawnDelay)
         {
             farObjectSpawnTimer = 0;
-            SpawnObject(farObject, EObjectDistanceType.Far);
+            SpawnObject(farObject, ObjectDistanceType.Far);
         }
         if (midObjectSpawnTimer > midObjectSpawnDelay)
         {
             midObjectSpawnTimer = 0;
-            SpawnObject(midObject, EObjectDistanceType.Mid);
+            SpawnObject(midObject, ObjectDistanceType.Mid);
         }
         if (nearMidObjectSpawnTimer > nearMidObjectSpawnDelay)
         {
             nearMidObjectSpawnTimer = 0;
-            SpawnObject(nearMidObject, EObjectDistanceType.NearMid);
+            SpawnObject(nearMidObject, ObjectDistanceType.NearMid);
         }
         if (nearObjectSpawnTimer > nearObjectSpawnDelay)
         {
             nearObjectSpawnTimer = 0;
-            SpawnObject(nearObject, EObjectDistanceType.Near);
+            SpawnObject(nearObject, ObjectDistanceType.Near);
         }
         if (closeObjectSpawnTimer > closeObjectSpawnDelay)
         {
             closeObjectSpawnTimer = 0;
-            SpawnObject(closeObject, EObjectDistanceType.Close);
+            SpawnObject(closeObject, ObjectDistanceType.Close);
         }
         if (groundObjectSpawnTimer > groundObjectSpawnDelay)
         {
             groundObjectSpawnTimer = 0;
-            SpawnObject(groundObject, EObjectDistanceType.Ground);
+            SpawnObject(groundObject, ObjectDistanceType.Ground);
         }
     }
 
-    private void SpawnObject(GameObject prefeb, EObjectDistanceType objectDistanceType)
+    private void SpawnObject(GameObject prefeb, ObjectDistanceType objectDistanceType)
     {
         GameObject spawnObject = null;
         for (int i = 0; i < backgroundObject[objectDistanceType].Count; i++)
@@ -161,69 +161,69 @@ public class ObjectManager : MonoBehaviour
         spawnObject.GetComponent<ObjectMove>().Init();
     }
 
-    public float GetObjectTypeSpeed(EObjectDistanceType objectDistanceType)
+    public float GetObjectTypeSpeed(ObjectDistanceType objectDistanceType)
     {
         switch (objectDistanceType)
         {
-            case EObjectDistanceType.DistantFar:
+            case ObjectDistanceType.DistantFar:
                 return distantFarSpeed;
-            case EObjectDistanceType.Far:
+            case ObjectDistanceType.Far:
                 return farSpeed;
-            case EObjectDistanceType.Mid:
+            case ObjectDistanceType.Mid:
                 return midSpeed;
-            case EObjectDistanceType.NearMid:
+            case ObjectDistanceType.NearMid:
                 return nearMidSpeed;
-            case EObjectDistanceType.Near:
+            case ObjectDistanceType.Near:
                 return nearSpeed;
-            case EObjectDistanceType.Close:
+            case ObjectDistanceType.Close:
                 return closeSpeed;
-            case EObjectDistanceType.Ground:
+            case ObjectDistanceType.Ground:
                 return groundSpeed;
         }
 
         return 0;
     }
 
-    public Vector3 GetObjectTypeScale(EObjectDistanceType objectDistanceType)
+    public Vector3 GetObjectTypeScale(ObjectDistanceType objectDistanceType)
     {
         switch (objectDistanceType)
         {
-            case EObjectDistanceType.DistantFar:
+            case ObjectDistanceType.DistantFar:
                 return distantFarScale;
-            case EObjectDistanceType.Far:
+            case ObjectDistanceType.Far:
                 return farScale;
-            case EObjectDistanceType.Mid:
+            case ObjectDistanceType.Mid:
                 return midScale;
-            case EObjectDistanceType.NearMid:
+            case ObjectDistanceType.NearMid:
                 return nearMidScale;
-            case EObjectDistanceType.Near:
+            case ObjectDistanceType.Near:
                 return nearScale;
-            case EObjectDistanceType.Close:
+            case ObjectDistanceType.Close:
                 return closeScale;
-            case EObjectDistanceType.Ground:
+            case ObjectDistanceType.Ground:
                 return groundScale;
         }
 
         return Vector3.zero;
     }
 
-    public float GetObjectTypeZPosition(EObjectDistanceType objectDistanceType)
+    public float GetObjectTypeZPosition(ObjectDistanceType objectDistanceType)
     {
         switch (objectDistanceType)
         {
-            case EObjectDistanceType.DistantFar:
+            case ObjectDistanceType.DistantFar:
                 return distantFarZPosition;
-            case EObjectDistanceType.Far:
+            case ObjectDistanceType.Far:
                 return farZPosition;
-            case EObjectDistanceType.Mid:
+            case ObjectDistanceType.Mid:
                 return midZPosition;
-            case EObjectDistanceType.NearMid:
+            case ObjectDistanceType.NearMid:
                 return nearMidZPosition;
-            case EObjectDistanceType.Near:
+            case ObjectDistanceType.Near:
                 return nearZPosition;
-            case EObjectDistanceType.Close:
+            case ObjectDistanceType.Close:
                 return closeZPosition;
-            case EObjectDistanceType.Ground:
+            case ObjectDistanceType.Ground:
                 return groundZPosition;
         }
 

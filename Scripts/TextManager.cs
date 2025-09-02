@@ -1,10 +1,18 @@
 using System.Collections;
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
+using System.Collections.Generic;
 
-public class TypeWrite : MonoBehaviour
+[System.Serializable]
+public class StoryLine
 {
+    public string ID;
+    public string Content;
+}
+
+public class TextManager : MonoBehaviour
+{
+    [Header("TextWrite")]
     public TextMeshProUGUI textUI;
     public float charDelay = 0.05f;   // 글자 간격 시간
     public float fadeTime = 0.2f;     // 페이드 시간
@@ -12,8 +20,30 @@ public class TypeWrite : MonoBehaviour
     private Coroutine typingCoroutine;
     private bool skip = false;
 
-    void Start()
+    [Header("Excel Loader")]
+    public TextAsset csvFile;
+    public List<StoryLine> storyList = new List<StoryLine>();
+
+    Dictionary<string, string> storyBoard = new Dictionary<string, string>();
+
+    void Awake()
     {
+        string[] lines = csvFile.text.Split('\n');
+        for (int i = 1; i < lines.Length; i++)
+        {
+            string[] row = lines[i].Split(',');
+            if (row.Length < 2) continue;
+            storyList.Add(new StoryLine
+            {
+                ID = row[0],
+                Content = row[1].Trim('"')
+            });
+
+            if (!storyBoard.ContainsKey(row[0]))
+            {
+                storyBoard.Add(row[0], row[1].Trim('"'));
+            }
+        }
     }
 
     public void ShowText(string fullText)
@@ -64,6 +94,7 @@ public class TypeWrite : MonoBehaviour
         }
 
         skip = false;
+        GameManager.instance.SetGameState(GameStateType.StoryEvent_CompleteText);
     }
 
     public void SkipText()

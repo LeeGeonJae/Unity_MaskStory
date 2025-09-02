@@ -1,12 +1,15 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-public enum EGameState
+public enum GameStateType
 {
     None = 0,
+    Title,
     MoveNextStep,
-    TextWrite,
-    ChoiceSelect
+    StoryEvent_TextWrite,
+    StoryEvent_CompleteText,
+    StoryEvent_SelectChoice
 }
 
 public class GameManager : MonoBehaviour
@@ -16,16 +19,20 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
     public ObjectManager objectManager;
     public StoryManager storyManager;
-    public GameObject textManager;
+    public TextManager textManager;
 
     // 이벤트
     [Header("Event")]
-    public UnityEvent<EGameState> updateGameState;
-    public UnityEvent<EPlayerStateType> updatePlayerState;
+    public UnityEvent<GameStateType> updateGameState;
 
     // 게임 상태
     [Header("GameState")]
-    public EGameState currentGameState = EGameState.MoveNextStep;
+    public GameStateType currentGameState = GameStateType.MoveNextStep;
+
+    // UI 관리
+    [Header("UI")]
+    public GameObject TitleUI;
+    public List<GameObject> InGameUI;
 
     private void Awake()
     {
@@ -41,20 +48,11 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            SetGameState(currentGameState == EGameState.MoveNextStep ? EGameState.None : EGameState.MoveNextStep);
-
-            if (currentGameState == EGameState.MoveNextStep)
-            {
-                updatePlayerState?.Invoke(EPlayerStateType.Run);
-            }
-            else if (currentGameState == EGameState.None)
-            {
-                updatePlayerState?.Invoke(EPlayerStateType.Idle);
-            }
+            SetGameState(currentGameState == GameStateType.MoveNextStep ? GameStateType.None : GameStateType.MoveNextStep);
         }
     }
 
-    public void SetGameState(EGameState gameState)
+    public void SetGameState(GameStateType gameState)
     {
         currentGameState = gameState;
         updateGameState?.Invoke(gameState);

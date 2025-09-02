@@ -1,15 +1,15 @@
 using System.Collections;
 using UnityEngine;
 
-public enum EPlayerStatType
+public enum PlayerStatType
 {
-    Poawe,
+    Power,
     Agility,
     Intelligence,
     Hp
 }
 
-public enum EPlayerStateType
+public enum PlayerStateType
 {
     Idle,
     Run,
@@ -18,31 +18,121 @@ public enum EPlayerStateType
     Death
 }
 
+[System.Serializable]
+public class PlayerStat
+{
+    public int Power = 10;
+    public int Agility = 10;
+    public int Intelligence = 10;
+    public int MaxHp = 100;
+    public int CurrentHp = 100;
+    public double Damage = 10;
+}
+
 public class Player : MonoBehaviour
 {
     // 애니메이터
+    [Header("Animation")]
     Animator animator;
     
     // 애니메이션 클립
     public AnimationClip attackAnim;
     public AnimationClip hitAnim;
 
+    // 플레이어 스텟
+    [Header("PlayerStat")]
+    public PlayerStat playerStat;
+
     // 플레이어 상태
-    EPlayerStateType playerStateType;
+    PlayerStateType playerStateType;
 
     void Start()
     {
         animator = GetComponent<Animator>();
 
-        GameManager.instance.updatePlayerState.AddListener(ChangePlayerState);
+        GameManager.instance.updateGameState.AddListener(CheckInGameState);
+        GameManager.instance.storyManager.OnReword.AddListener(GetRewrod);
+        GameManager.instance.storyManager.OnPenalty.AddListener(GetPanalty);
+
+        playerStat.Damage = ((double)playerStat.Power + ((double)playerStat.Agility / 1.5)) * ((double)playerStat.Intelligence / 5);
     }
 
     private void OnDestroy()
     {
-        GameManager.instance.updatePlayerState.RemoveListener(ChangePlayerState);
+        GameManager.instance.updateGameState.RemoveListener(CheckInGameState);
+        GameManager.instance.storyManager.OnReword.RemoveListener(GetRewrod);
+        GameManager.instance.storyManager.OnPenalty.RemoveListener(GetPanalty);
     }
 
-    public void ChangePlayerState(EPlayerStateType stateType)
+    public void Attack()
+    {
+        ChangePlayerState(PlayerStateType.Attack);
+    }
+
+    public void Damaged(int damage)
+    {
+        playerStat.CurrentHp -= damage;
+        if (playerStat.CurrentHp > 0)
+        {
+            ChangePlayerState(PlayerStateType.Hit);
+        }
+        else
+        {
+            ChangePlayerState(PlayerStateType.Death);
+        }
+    }
+
+    private void GetRewrod(Reword reword)
+    {
+        switch (reword.StatType)
+        {
+            case PlayerStatType.Power:
+                playerStat.Power += reword.RewordValue;
+                break;
+            case PlayerStatType.Agility:
+                playerStat.Agility += reword.RewordValue;
+                break;
+            case PlayerStatType.Intelligence:
+                playerStat.Intelligence += reword.RewordValue;
+                break;
+            case PlayerStatType.Hp:
+                playerStat.CurrentHp += reword.RewordValue;
+                break;
+        }
+    }
+
+    private void GetPanalty(Penalty penalty)
+    {
+        switch (penalty.StatType)
+        {
+            case PlayerStatType.Power:
+                playerStat.Power -= penalty.PenaltydValue;
+                break;
+            case PlayerStatType.Agility:
+                playerStat.Agility -= penalty.PenaltydValue;
+                break;
+            case PlayerStatType.Intelligence:
+                playerStat.Intelligence -= penalty.PenaltydValue;
+                break;
+            case PlayerStatType.Hp:
+                Damaged(penalty.PenaltydValue);
+                break;
+        }
+    }
+
+    private void CheckInGameState(GameStateType gameState)
+    {
+        if (gameState == GameStateType.MoveNextStep)
+        {
+            ChangePlayerState(PlayerStateType.Run);
+        }
+        else if (gameState != GameStateType.StoryEvent_SelectChoice)
+        {
+            ChangePlayerState(PlayerStateType.Idle);
+        }
+    }
+
+    private void ChangePlayerState(PlayerStateType stateType)
     {
         Debug.Log("ChangePlayerState 함수 실행");
 
@@ -51,31 +141,31 @@ public class Player : MonoBehaviour
         {
             switch (stateType)
             {
-                case EPlayerStateType.Idle:
+                case PlayerStateType.Idle:
                     {
                         animator.SetBool("IsPlayerRun", false);
                         animator.SetBool("IsPlayerAttack", false);
                         animator.SetBool("IsPlayerHit", false);
                     }
                     break;
-                case EPlayerStateType.Run:
+                case PlayerStateType.Run:
                     {
                         animator.SetBool("IsPlayerRun", true);
                     }
                     break;
-                case EPlayerStateType.Attack:
+                case PlayerStateType.Attack:
                     {
                         animator.SetBool("IsPlayerAttack", true);
                         StartCoroutine(AttackResetBool());
                     }
                     break;
-                case EPlayerStateType.Hit:
+                case PlayerStateType.Hit:
                     {
                         animator.SetBool("IsPlayerHit", true);
                         StartCoroutine(HitResetBool());
                     }
                     break;
-                case EPlayerStateType.Death:
+                case PlayerStateType.Death:
                     {
                         animator.SetBool("IsPlayerDeath", true);
                     }
@@ -87,11 +177,16 @@ public class Player : MonoBehaviour
     IEnumerator AttackResetBool()
     {
         yield return new WaitForSeconds(attackAnim.length);
-        ChangePlayerState(EPlayerStateType.Idle);
+        ChangePlayerState(PlayerStateType.Idle);
     }
     IEnumerator HitResetBool()
     {
         yield return new WaitForSeconds(hitAnim.length);
-        ChangePlayerState(EPlayerStateType.Idle);
+        ChangePlayerState(PlayerStateType.Idle);
+    }
+
+    public PlayerStat GetPlayerStat()
+    {
+        return playerStat;
     }
 }
