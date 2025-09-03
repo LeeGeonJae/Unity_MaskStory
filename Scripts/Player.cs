@@ -58,7 +58,8 @@ public class Player : MonoBehaviour
         GameManager.instance.storyManager.OnReword.AddListener(GetRewrod);
         GameManager.instance.storyManager.OnPenalty.AddListener(GetPanalty);
 
-        playerStat.Damage = ((double)playerStat.Power + ((double)playerStat.Agility / 1.5)) * ((double)playerStat.Intelligence / 5);
+        UpdatePlayerStat();
+        playerStat.CurrentHp = playerStat.MaxHp;
         hpBar.value = 1;
     }
 
@@ -109,7 +110,7 @@ public class Player : MonoBehaviour
                 break;
         }
 
-        playerStat.Damage = ((double)playerStat.Power * 2 + ((double)playerStat.Agility)) * ((double)playerStat.Intelligence / 30);
+        UpdatePlayerStat();
     }
 
     private void GetPanalty(Penalty penalty)
@@ -130,7 +131,7 @@ public class Player : MonoBehaviour
                 break;
         }
 
-        playerStat.Damage = ((double)playerStat.Power + ((double)playerStat.Agility / 1.5)) * ((double)playerStat.Intelligence / 5);
+        UpdatePlayerStat();
     }
 
     private void CheckInGameState(GameStateType gameState)
@@ -212,5 +213,18 @@ public class Player : MonoBehaviour
                 GameManager.instance.OnConditionClick?.Invoke(ActionType.Pass, playerStat);
                 break;
         }
+    }
+
+    // 플레이어 스텟 갱신
+    private void UpdatePlayerStat()
+    {
+        playerStat.Damage = (double)playerStat.Power * 1.5 + (double)playerStat.Agility * 0.8 + (double)playerStat.Intelligence * 0.5;
+        playerStat.MaxHp = 100 + playerStat.Power * 2;
+
+        if (playerStat.CurrentHp > playerStat.MaxHp)
+        {
+            playerStat.CurrentHp = playerStat.MaxHp;
+        }
+        hpBar.value = (float)playerStat.CurrentHp / (float)playerStat.MaxHp;
     }
 }

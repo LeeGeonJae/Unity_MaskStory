@@ -48,7 +48,7 @@ public class StoryEvent : MonoBehaviour
     StoryManager storyManager;
     TextManager textManager;
 
-    StoryEventType storyEventType;
+    [SerializeField]StoryEventType storyEventType;
     bool IsActiveEvent = false;
 
     void Start()
@@ -202,10 +202,13 @@ public class StoryEvent : MonoBehaviour
         {
             if (GetComponentInChildren<Monster>())
             {
+                textManager.ShowText(eventName + "-" + ((int)actionType + 1) + "-2", false);
                 GetComponentInChildren<Monster>().Attack();
             }
-
-            textManager.ShowText(eventName + "-" + ((int)actionType + 1) + "-2", false);
+            else
+            {
+                textManager.ShowText(eventName + "-" + ((int)actionType + 1) + "-2", true);
+            }
             storyManager.OnPenalty?.Invoke(penalty[actionNum]);
         }
     }
@@ -238,6 +241,8 @@ public class StoryEvent : MonoBehaviour
     // 성공했는지 확인하고 성공했으면 보상
     private void EventSucced(int value, int actionNum)
     {
+        Debug.Log("선택 성공 하였습니다 : " + value);
+
         succedConditionValue -= value;
         if (succedConditionValue <= 0)
         {

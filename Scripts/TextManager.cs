@@ -12,19 +12,26 @@ public class StoryLine
 
 public class TextManager : MonoBehaviour
 {
+    // 텍스트 쓰기
     [Header("TextWrite")]
     public TextMeshProUGUI textUI;
     public float charDelay = 0.05f;   // 글자 간격 시간
     public float fadeTime = 0.2f;     // 페이드 시간
 
-    private Coroutine typingCoroutine;
-    private bool skip = false;
-
+    // 엑셀 로드
     [Header("Excel Loader")]
     public TextAsset csvFile;
     public List<StoryLine> storyList = new List<StoryLine>();
 
+    // 텍스트 저장소
     Dictionary<string, string> storyBoard = new Dictionary<string, string>();
+
+    // 텍스트 옵션
+    Coroutine typingCoroutine;
+    bool skip = false;
+    Reword newReword;
+    Penalty newPenalty;
+    string addText;
 
     void Awake()
     {
@@ -46,10 +53,79 @@ public class TextManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        GameManager.instance.storyManager.OnReword.AddListener(GetReword);
+        GameManager.instance.storyManager.OnPenalty.AddListener(GetPenalty);
+    }
+
+    private void GetReword(Reword reword)
+    {
+        if (reword.RewordValue != 0)
+        {
+            newReword = reword;
+        }
+    }
+    private void GetPenalty(Penalty penalty)
+    {
+        if (penalty.PenaltydValue != 0)
+        {
+            newPenalty = penalty;
+        }
+    }
+
     public void ShowText(string fullText, bool compelete)
     {
-        if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-        typingCoroutine = StartCoroutine(TypeText(storyBoard[fullText], compelete));
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+        }
+
+        if (newReword != null)
+        {
+            switch (newReword.StatType)
+            {
+                case PlayerStatType.Hp:
+                    addText = "체력+" + newReword.RewordValue + "\n\n";
+                    break;
+                case PlayerStatType.Power:
+                    addText = "힘+" + newReword.RewordValue + "\n\n";
+                    break;
+                case PlayerStatType.Intelligence:
+                    addText = "지능+" + newReword.RewordValue + "\n\n";
+                    break;
+                case PlayerStatType.Agility:
+                    addText = "민첩+" + newReword.RewordValue + "\n\n";
+                    break;
+            }
+            typingCoroutine = StartCoroutine(TypeText(addText + storyBoard[fullText], compelete));
+
+        }
+        else if (newPenalty != null)
+        {
+            switch (newPenalty.StatType)
+            {
+                case PlayerStatType.Hp:
+                    addText = "체력+" + newPenalty.PenaltydValue + "\n\n";
+                    break;
+                case PlayerStatType.Power:
+                    addText = "힘+" + newPenalty.PenaltydValue + "\n\n";
+                    break;
+                case PlayerStatType.Intelligence:
+                    addText = "지능+" + newPenalty.PenaltydValue + "\n\n";
+                    break;
+                case PlayerStatType.Agility:
+                    addText = "민첩+" + newPenalty.PenaltydValue + "\n\n";
+                    break;
+            }
+            typingCoroutine = StartCoroutine(TypeText(addText + storyBoard[fullText], compelete));
+        }
+        else
+        {
+            typingCoroutine = StartCoroutine(TypeText(storyBoard[fullText], compelete));
+        }
+
+        addText = "";
     }
 
     IEnumerator TypeText(string fullText, bool compelete)
