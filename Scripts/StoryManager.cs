@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -35,7 +34,7 @@ public class StoryManager : MonoBehaviour
     [SerializeField] int currentTurn = 0;
     [SerializeField] int currentsubStoryEvent = 0;
 
-    [SerializeField] GameObject storyEventObject;
+    public GameObject storyEventObject;
 
     // 이벤트 생성
     public void SpawnStoryEvent()
@@ -59,6 +58,7 @@ public class StoryManager : MonoBehaviour
             {
                 storyEventObject = Instantiate(mainStoryEvent[i]);
                 storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.MainStory);
+                StoryEventSetting();
                 return true;
             }
         }
@@ -86,6 +86,11 @@ public class StoryManager : MonoBehaviour
                     storyEventObject.GetComponent<StoryEvent>().SetEventType(StoryEventType.SubStory);
                     StoryEventSetting();
                     currentsubStoryEvent++;
+
+                    if (currentsubStoryEvent == subStoreEvent.Count)
+                    {
+                        GameManager.instance.endingManager.AddEnding(EndingType.GameEnding_Karen);
+                    }
                 }
                 break;
                 // 몬스터 (랜덤 생성)

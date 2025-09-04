@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public enum GameButtonType
 { 
@@ -7,7 +8,9 @@ public enum GameButtonType
     Act,
     Observe,
     Pass,
-    EventCompelete
+    EventCompelete,
+    EndingNext,
+    EndingComplete
 }
 
 
@@ -35,6 +38,14 @@ public class GameButton : MonoBehaviour
         else if(type == GameButtonType.EventCompelete)
         {
             GameManager.instance.SetGameState(GameStateType.MoveNextStep);
+        }
+        else if(type == GameButtonType.EndingNext)
+        {
+            GameManager.instance.SetGameState(GameStateType.GameEnding_TextWrite);
+        }
+        else if(type == GameButtonType.EndingComplete)
+        {
+            GameManager.instance.SetGameState(GameStateType.GameExit);
         }
         else
         {

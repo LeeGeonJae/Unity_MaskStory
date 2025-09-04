@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
+using UnityEngine.Audio;
 
 [System.Serializable]
 public class StoryLine
@@ -23,6 +24,10 @@ public class TextManager : MonoBehaviour
     public TextAsset csvFile;
     public List<StoryLine> storyList = new List<StoryLine>();
 
+    [Header("Sound")]
+    AudioSource audioSource;
+    [SerializeField] AudioClip typingAudioClip;
+
     // 텍스트 저장소
     Dictionary<string, string> storyBoard = new Dictionary<string, string>();
 
@@ -39,7 +44,11 @@ public class TextManager : MonoBehaviour
         for (int i = 1; i < lines.Length; i++)
         {
             string[] row = lines[i].Split(',');
-            if (row.Length < 2) continue;
+            if (row.Length < 2)
+            {
+                continue;
+            }
+
             storyList.Add(new StoryLine
             {
                 ID = row[0],
@@ -57,6 +66,11 @@ public class TextManager : MonoBehaviour
     {
         GameManager.instance.storyManager.OnReword.AddListener(GetReword);
         GameManager.instance.storyManager.OnPenalty.AddListener(GetPenalty);
+
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.resource = typingAudioClip;
+        audioSource.loop = false;
+
     }
 
     private void GetReword(Reword reword)
@@ -74,13 +88,14 @@ public class TextManager : MonoBehaviour
         }
     }
 
-    public void ShowText(string fullText, bool compelete)
+    public void ShowText(string fullText, GameStateType nextGameStateType)
     {
         if (typingCoroutine != null)
         {
             StopCoroutine(typingCoroutine);
         }
 
+        addText = "";
         if (newReword != null)
         {
             switch (newReword.StatType)
@@ -98,37 +113,38 @@ public class TextManager : MonoBehaviour
                     addText = "민첩+" + newReword.RewordValue + "\n\n";
                     break;
             }
-            typingCoroutine = StartCoroutine(TypeText(addText + storyBoard[fullText], compelete));
-
+            typingCoroutine = StartCoroutine(TypeText(addText + storyBoard[fullText], nextGameStateType));
+            newReword = null;
         }
         else if (newPenalty != null)
         {
             switch (newPenalty.StatType)
             {
                 case PlayerStatType.Hp:
-                    addText = "체력+" + newPenalty.PenaltydValue + "\n\n";
+                    addText = "체력-" + newPenalty.PenaltydValue + "\n\n";
                     break;
                 case PlayerStatType.Power:
-                    addText = "힘+" + newPenalty.PenaltydValue + "\n\n";
+                    addText = "힘-" + newPenalty.PenaltydValue + "\n\n";
                     break;
                 case PlayerStatType.Intelligence:
-                    addText = "지능+" + newPenalty.PenaltydValue + "\n\n";
+                    addText = "지능-" + newPenalty.PenaltydValue + "\n\n";
                     break;
                 case PlayerStatType.Agility:
-                    addText = "민첩+" + newPenalty.PenaltydValue + "\n\n";
+                    addText = "민첩-" + newPenalty.PenaltydValue + "\n\n";
                     break;
             }
-            typingCoroutine = StartCoroutine(TypeText(addText + storyBoard[fullText], compelete));
+            typingCoroutine = StartCoroutine(TypeText(addText + storyBoard[fullText], nextGameStateType));
+            newPenalty = null;
         }
         else
         {
-            typingCoroutine = StartCoroutine(TypeText(storyBoard[fullText], compelete));
+            typingCoroutine = StartCoroutine(TypeText(storyBoard[fullText], nextGameStateType));
         }
 
         addText = "";
     }
 
-    IEnumerator TypeText(string fullText, bool compelete)
+    IEnumerator TypeText(string fullText, GameStateType nextGameStateType)
     {
         textUI.text = "";
         for (int i = 0; i < fullText.Length; i++)
@@ -139,10 +155,7 @@ public class TextManager : MonoBehaviour
                 break;
             }
 
-            textUI.text += fullText[i] == '\\' && i + 1 < fullText.Length && fullText[i + 1] == 'n'
-                ? "\n" // "\n" 문자열을 실제 개행으로 변환
-                : fullText[i].ToString();
-
+            textUI.text += fullText[i] == '\\' && i + 1 < fullText.Length && fullText[i + 1] == 'n' ? "\n" : fullText[i].ToString();
             textUI.ForceMeshUpdate();
 
             int charIndex = textUI.text.Length - 1;
@@ -160,7 +173,9 @@ public class TextManager : MonoBehaviour
             Color32[] vertexColors = meshInfo.colors32;
 
             for (int j = 0; j < 4; j++)
+            {
                 vertexColors[vertexIndex + j] = new Color32(255, 255, 255, 0);
+            }
 
             textUI.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
 
@@ -170,32 +185,20 @@ public class TextManager : MonoBehaviour
                 t += Time.deltaTime;
                 byte alpha = (byte)Mathf.Lerp(0, 255, t / fadeTime);
                 for (int j = 0; j < 4; j++)
+                {
                     vertexColors[vertexIndex + j].a = alpha;
+                }
 
                 textUI.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
                 yield return null;
             }
 
+            audioSource.Play();
             yield return new WaitForSeconds(charDelay);
         }
 
         skip = false;
-
-        // 텍스트 완료
-        if (compelete)
-        {
-            if (GameManager.instance.currentGameState != GameStateType.MoveNextStep)
-            {
-                GameManager.instance.SetGameState(GameStateType.StoryEvent_CompleteEvent);
-            }
-        }
-        else
-        {
-            if (GameManager.instance.currentGameState != GameStateType.MoveNextStep)
-            {
-                GameManager.instance.SetGameState(GameStateType.StoryEvent_CompleteText);
-            }
-        }
+        GameManager.instance.SetGameState(nextGameStateType);
     }
 
     public void SkipText()

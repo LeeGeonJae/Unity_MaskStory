@@ -1,6 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public enum PlayerStatType
 {
@@ -22,9 +23,9 @@ public enum PlayerStateType
 [System.Serializable]
 public class PlayerStat
 {
-    public int Power = 10;
-    public int Agility = 10;
-    public int Intelligence = 10;
+    public int Power = 15;
+    public int Agility = 15;
+    public int Intelligence = 15;
     public int MaxHp = 100;
     public int CurrentHp = 100;
     public double Damage = 10;
@@ -43,7 +44,14 @@ public class Player : MonoBehaviour
     // 플레이어 스텟
     [Header("PlayerStat")]
     public PlayerStat playerStat;
-    public Slider hpBar;
+    public UnityEngine.UI.Slider hpBar;
+
+    [Header("Audio")]
+    AudioSource audioSource;
+    public List<AudioClip> attackSound;
+    public AudioClip hitSound;
+    public AudioClip DeathSound;
+    public AudioClip runSound;
 
     // 플레이어 상태
     PlayerStateType playerStateType;
@@ -51,6 +59,8 @@ public class Player : MonoBehaviour
     void Start()
     {
         animator = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
+        audioSource.outputAudioMixerGroup = GameManager.instance.soundManager.sfxGroup; 
 
         GameManager.instance.updateGameState.AddListener(CheckInGameState);
         GameManager.instance.onGameButton.AddListener(PlayerButtonClick);
@@ -88,6 +98,7 @@ public class Player : MonoBehaviour
         else
         {
             hpBar.value = 0;
+            hpBar.gameObject.SetActive(false);
             ChangePlayerState(PlayerStateType.Death);
         }
     }
@@ -138,6 +149,10 @@ public class Player : MonoBehaviour
     {
         if (gameState == GameStateType.MoveNextStep)
         {
+            playerStat.CurrentHp += 5;
+            if (playerStat.CurrentHp > playerStat.MaxHp)
+                playerStat.CurrentHp = playerStat.MaxHp;
+
             ChangePlayerState(PlayerStateType.Run);
         }
         else if (gameState != GameStateType.StoryEvent_SelectChoice)
@@ -160,28 +175,38 @@ public class Player : MonoBehaviour
                         animator.SetBool("IsPlayerRun", false);
                         animator.SetBool("IsPlayerAttack", false);
                         animator.SetBool("IsPlayerHit", false);
+                        audioSource.Stop();
                     }
                     break;
                 case PlayerStateType.Run:
                     {
                         animator.SetBool("IsPlayerRun", true);
+                        playSound(runSound, true);
                     }
                     break;
                 case PlayerStateType.Attack:
                     {
                         animator.SetBool("IsPlayerAttack", true);
                         StartCoroutine(AttackResetBool());
+                        for (int i = 0; i < attackSound.Count; i++)
+                        {
+                            playSound(attackSound[i], false);
+                        }
                     }
                     break;
                 case PlayerStateType.Hit:
                     {
                         animator.SetBool("IsPlayerHit", true);
                         StartCoroutine(HitResetBool());
+                        playSound(hitSound, false);
                     }
                     break;
                 case PlayerStateType.Death:
                     {
                         animator.SetBool("IsPlayerDeath", true);
+                        playSound(DeathSound, false);
+
+                        GameManager.instance.GameEndingStart(true);
                     }
                     break;
             }
@@ -199,6 +224,7 @@ public class Player : MonoBehaviour
         ChangePlayerState(PlayerStateType.Idle);
     }
 
+    // 플레이어 버튼 클릭 타입에 따른 스토리 이벤트 이벤트 실행
     private void PlayerButtonClick(GameButtonType type)
     {
         switch (type)
@@ -218,13 +244,20 @@ public class Player : MonoBehaviour
     // 플레이어 스텟 갱신
     private void UpdatePlayerStat()
     {
-        playerStat.Damage = (double)playerStat.Power * 1.5 + (double)playerStat.Agility * 0.8 + (double)playerStat.Intelligence * 0.5;
-        playerStat.MaxHp = 100 + playerStat.Power * 2;
+        playerStat.Damage = (double)playerStat.Power * 1.5 + (double)playerStat.Agility * 0.8 + (double)playerStat.Intelligence;
+        playerStat.MaxHp = 150 + playerStat.Power * 5;
 
         if (playerStat.CurrentHp > playerStat.MaxHp)
         {
             playerStat.CurrentHp = playerStat.MaxHp;
         }
         hpBar.value = (float)playerStat.CurrentHp / (float)playerStat.MaxHp;
+    }
+
+    private void playSound(AudioClip clip, bool isLoop)
+    {
+        audioSource.resource = clip;
+        audioSource.loop = isLoop;
+        audioSource.Play();
     }
 }

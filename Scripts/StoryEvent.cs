@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using TMPro;
+using UnityEngine.Audio;
 
 [System.Serializable]
 public class Condition
@@ -31,6 +32,7 @@ public class StoryEvent : MonoBehaviour
     public int succedConditionValue = 1;
 
     [Header ("Event Setting")]
+    [SerializeField]StoryEventType storyEventType;
     public string eventName;
 
     public List<Condition> condition;
@@ -48,12 +50,22 @@ public class StoryEvent : MonoBehaviour
     StoryManager storyManager;
     TextManager textManager;
 
-    [SerializeField]StoryEventType storyEventType;
+    [Header("Audio")]
+    public int audioNumber = -1;
+    AudioSource audioSource;
+    public AudioClip succedAudioClip;
+    public AudioClip failedAudioClip;
+
+    [Header("Ending")]
+    public bool isNormalEnding = false;
+    public EndingType endingType;
+
     bool IsActiveEvent = false;
 
     void Start()
     {
         rigidbody2 = GetComponent<Rigidbody2D>();
+        audioSource = GetComponent<AudioSource>();
 
         gameManager = GameManager.instance;
         gameManager.updateGameState.AddListener(UpdateGameState);
@@ -61,6 +73,7 @@ public class StoryEvent : MonoBehaviour
 
         storyManager = gameManager.storyManager;
         textManager = gameManager.textManager;
+        audioSource.outputAudioMixerGroup = gameManager.soundManager.sfxGroup;
 
         // 버튼 텍스트 수정
         for (int i = 0; i < gameManager.inGame_SelectButtonUI.Count; i++)
@@ -86,6 +99,12 @@ public class StoryEvent : MonoBehaviour
         {
             IsActiveEvent = true;
             gameManager.SetGameState(GameStateType.StoryEvent_TextWrite);
+
+            // 배경음 재생
+            if (audioNumber >= 0)
+            {
+                gameManager.OnBGMPlay?.Invoke(audioNumber);
+            }
         }
     }
 
@@ -110,7 +129,7 @@ public class StoryEvent : MonoBehaviour
         }
         else if (gameState == GameStateType.StoryEvent_TextWrite)
         {
-            textManager.ShowText(eventName, false);
+            TextWrite(eventName, GameStateType.StoryEvent_CompleteText);
             rigidbody2.linearVelocity = Vector3.zero;
         }
     }
@@ -188,6 +207,11 @@ public class StoryEvent : MonoBehaviour
                 EventSucced((int)playerStat.Damage, actionNum);
                 GetComponentInChildren<Monster>().Damaged();
             }
+            else if (GetComponentInChildren<Monster>() && actionType == ActionType.Observe)             // 몬스터 관찰
+            {
+                EventSucced(0, actionNum);
+                GetComponentInChildren<Monster>().Tack();
+            }
             else if (storyEventType == StoryEventType.SubStory && actionType == ActionType.Pass)        // 서브 퀘스트 지나칠 시 실패
             {
                 EventSucced(1, actionNum);
@@ -200,16 +224,20 @@ public class StoryEvent : MonoBehaviour
         }
         else
         {
+            storyManager.OnPenalty?.Invoke(penalty[actionNum]);
             if (GetComponentInChildren<Monster>())
             {
-                textManager.ShowText(eventName + "-" + ((int)actionType + 1) + "-2", false);
+                TextWrite(eventName + "-" + ((int)actionType + 1) + "-2", GameStateType.StoryEvent_CompleteText);
                 GetComponentInChildren<Monster>().Attack();
             }
             else
             {
-                textManager.ShowText(eventName + "-" + ((int)actionType + 1) + "-2", true);
+                if (failedAudioClip)
+                {
+                    PlaySound(failedAudioClip);
+                }
+                TextWrite(eventName + "-" + ((int)actionType + 1) + "-2", GameStateType.StoryEvent_CompleteEvent);
             }
-            storyManager.OnPenalty?.Invoke(penalty[actionNum]);
         }
     }
 
@@ -244,14 +272,44 @@ public class StoryEvent : MonoBehaviour
         Debug.Log("선택 성공 하였습니다 : " + value);
 
         succedConditionValue -= value;
-        if (succedConditionValue <= 0)
+        if (succedConditionValue <= 0 && isNormalEnding)
+        {
+            Debug.Log("노말 게임 엔딩 로그" + value);
+            GameManager.instance.GameEndingStart(false);
+        }
+        else if (succedConditionValue <= 0 && !isNormalEnding)
         {
             storyManager.OnReword?.Invoke(reword[actionNum]);
-            textManager.ShowText(eventName + "-" + (actionNum + 1) + "-1", true);
+            TextWrite(eventName + "-" + (actionNum + 1) + "-1", GameStateType.StoryEvent_CompleteEvent);
+
+            if (audioNumber >= 0)
+            {
+                gameManager.OnBGMPlay?.Invoke(0);
+            }
+
+            if (succedAudioClip)
+            {
+                PlaySound(succedAudioClip);
+            }
         }
         else
         {
-            textManager.ShowText(eventName + "-" + (actionNum + 1) + "-1", false);
+            TextWrite(eventName + "-" + (actionNum + 1) + "-1", GameStateType.StoryEvent_CompleteText);
+        }
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        audioSource.resource = clip;
+        audioSource.loop = false;
+        audioSource.Play();
+    }
+
+    private void TextWrite(string id, GameStateType gameState)
+    {
+        if (gameManager.currentGameState < GameStateType.GameOver)
+        {
+            textManager.ShowText(id, gameState);
         }
     }
 }
